@@ -1,0 +1,221 @@
+#include<iostream>
+#include<algorithm>
+#include<map>
+#include<vector>
+#include<set>
+
+#define MAX_N 30
+
+using namespace std;
+
+//global variables
+int N;
+int T;
+int arr[MAX_N];
+vector<int>key_arr;
+map<int, int>num_to_idx;
+map<int, vector<int>>bucket_element;
+map<int, map<int, vector<int>>>bucket_combinations;
+vector<int>Solution;
+
+//global functions
+int num_to_key(int num);
+void print_bucket_element();
+void print_bucket_combinations();
+void dfs(int t, vector<int>sol, set<int>used_bucket);
+
+
+int main() {
+
+	while (cin >> N) {
+		////	PART 0: initialize	////
+		bucket_element.clear();
+		num_to_idx.clear();
+		Solution.clear();
+		bucket_combinations.clear();
+		key_arr.clear();
+
+		////	PART 1: input	////
+		for (int i = 0; i < N; i++) {
+			cin >> arr[i];
+			num_to_idx[arr[i]] = i;
+		}
+		cin >> T;
+
+		////	PART 2: Preprocess input	////
+		/*
+		Range will become:
+		(first element to next bucket_element first element -1)
+		*/
+		sort(arr, arr + N);
+		//cout << "Case:" << endl;
+		int sum = 0;
+		vector<int>temp_bucket;
+		for (int i = 0; i < N; i++) {
+			if (arr[i] > sum) {
+				key_arr.push_back(arr[i] - 1);
+				bucket_element[arr[i] - 1] = temp_bucket;
+				temp_bucket.clear();
+			}
+			sum += arr[i];
+			temp_bucket.push_back(arr[i]);
+		}
+		//remember the last bucket!
+		bucket_element[sum] = temp_bucket;
+		key_arr.push_back(sum);
+		
+		//print_bucket_elements();
+
+		////	PART 4: from bucket_element to bucket_combination	////
+		map<int, vector<int>>::iterator ite; //ite points to bucket_element
+		for (ite = bucket_element.begin(); ite != bucket_element.end(); ite++) {
+			map<int, vector<int>>this_bucket_comb; //combination for the elements within this bucket
+			this_bucket_comb.clear();
+			int ele_cnt = ite->second.size();
+			for (int i = 0; i < (1 << ele_cnt); i++) {
+				int temp_sum = 0;
+				int temp_cnt = 0;
+				vector<int>temp_used;
+				temp_used.clear();
+
+				for (int j = 0; j < ele_cnt; j++) {
+					if (i >> j & 1) { //use the j-th element in the bucket
+						temp_cnt++;
+						temp_used.push_back(ite->second[j]);
+						temp_sum += ite->second[j];
+					}
+				}
+
+				if (this_bucket_comb.find(temp_sum) == this_bucket_comb.end() || this_bucket_comb[temp_sum].size() > temp_cnt) {
+					this_bucket_comb[temp_sum].clear();
+					for (int i = 0; i < temp_used.size(); i++) {
+						this_bucket_comb[temp_sum].push_back(temp_used[i]);
+					}
+				}
+
+			}
+			bucket_combinations[ite->first] = this_bucket_comb;
+		}
+		//print_bucket_combinations();
+
+		////	PART 5: from Target to range	////
+		int target = T;
+		vector<int>temp_v;
+		temp_v.clear();
+		set<int>temp_s;
+		temp_s.clear();
+		dfs(target, temp_v, temp_s);
+
+		////	PART 6: Output	////
+		cout << "Solution: ";
+		if (Solution.size() > 0) {
+			for (int i = 0; i < Solution.size(); i++) {
+				//cout << Solution[i] << " ";
+				cout<<num_to_idx[Solution[i]]<<" ";
+			}
+			cout << endl;
+		}
+		else {
+			cout << "impossible" << endl;
+		}
+	}
+
+}
+
+int num_to_key(int num) {
+	int idx = lower_bound(key_arr.begin(), key_arr.end(), num) - key_arr.begin();
+	if (idx >= key_arr.size()) {
+		return -1;
+	}
+	return key_arr[idx];
+}
+
+void print_bucket_element() {
+	cout << "Bucket & its elements:" << endl;
+	map<int, vector<int>>::iterator ite;
+	for (ite = bucket_element.begin(); ite != bucket_element.end(); ite++) {
+		if (ite == bucket_element.begin())continue;
+		cout << "Key range: " << ite->second[0] << " " << ite->first << endl;
+		cout << "Numbers: ";
+		for (int i = 0; i < ite->second.size(); i++) {
+			cout << ite->second[i] << " ";
+		}
+		cout << endl;
+		cout << endl;
+	}
+	cout << endl;
+}
+void print_bucket_combinations() {
+	cout << "Bucket & its inner elements' combinations:" << endl;
+	map<int, map<int, vector<int>>>::iterator cite; //combination ite
+	for (cite = bucket_combinations.begin(); cite != bucket_combinations.end(); cite++) {
+		if (cite == bucket_combinations.begin())continue;
+		cout << "Key: " << cite->first << endl;
+
+		cout << "Combinations: " << endl;
+		map<int, vector<int>>::iterator vite; //value ite
+		for (vite = (cite->second).begin(); vite != (cite->second).end(); vite++) {
+			cout << "Value: " << vite->first << " =";
+			for (int i = 0; i < vite->second.size(); i++) {
+				cout << vite->second[i] << " ";
+			}
+			cout << endl;
+		}
+		cout << endl;
+	}
+}
+
+void dfs(int t, vector<int>sol,set<int>used_bucket) {
+	if (t == 66) {
+		cout << "here";
+	}
+	//end circumstance
+	if (t == 0) {
+		if (Solution.size() == 0 || Solution.size() > sol.size()) {
+			Solution.clear();
+			for (int i = 0; i < sol.size(); i++) {
+				Solution.push_back(sol[i]);
+			}
+		}
+		return;
+	}
+	
+	//find possible combinations in target bucket
+	int b_key = num_to_key(t);
+	//if this bucket is already used or no bucket available
+	if (b_key == -1 || used_bucket.find(b_key) != used_bucket.end()) {
+		return;
+	}
+	else {
+		map<int, vector<int>>t_bucket = bucket_combinations[b_key];
+		map<int, vector<int>>::iterator ite;
+		
+		for (ite = t_bucket.begin(); ite != t_bucket.end(); ite++) {
+			
+			//try this
+			if (ite->first <= t) {
+				vector<int>new_vec;
+				new_vec.clear();
+				//copy(sol.begin(), sol.end(), new_vec.begin());
+				for (int i = 0; i < sol.size(); i++) {
+					new_vec.push_back(sol[i]);
+				}
+				new_vec.insert(new_vec.end(), ite->second.begin(), ite->second.end());
+				
+				set<int>new_used_b;
+				new_used_b.clear();
+				new_used_b = used_bucket;
+				new_used_b.insert(b_key);
+				dfs(t - ite->first, new_vec, new_used_b);
+			}
+			else {
+				continue;
+			}
+			
+			//return to orig state
+		}
+		
+		return;
+	}
+	
+}
