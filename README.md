@@ -10,3 +10,5 @@ Given an array of integers, return the smallest set of indices of numbers such t
  
            [1,2,6,3,17,82,23,234] -> 23
            Solution [6]
+
+Please refer to CityU Solutions.docx for detailed explanation of each approach
