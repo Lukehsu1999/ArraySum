@@ -1,0 +1,150 @@
+#include<iostream>
+#include<algorithm>
+#include<map>
+#include<vector>
+
+#define MAX_N 30
+
+using namespace std;
+
+//
+struct solution {
+	int cnt=9999;
+	vector<int>number_used;
+};
+
+//global variables
+int N;
+int T;
+int arr[MAX_N];
+map<int, solution>Sol_setA; //key: sum; value: combination
+map<int, solution>Sol_setB;
+map<int, int>num_to_idx;
+vector<int>best_sol;
+
+int main() {
+
+	while (cin >> N) {
+		////	PART 0: initialize	////
+		Sol_setA.clear();
+		Sol_setB.clear();
+		num_to_idx.clear();
+		best_sol.clear();
+
+		////	PART 1: input	////
+		for (int i = 0; i < N; i++) {
+			cin >> arr[i];
+			num_to_idx[arr[i]] = i;
+		}
+		cin >> T;
+
+		////	PART 2: enumerate all combinations of set A (first half of the arr)	////
+		//cout << (1 << N) << endl;
+		Sol_setA[0].cnt = 0;
+		for (int i = 0; i < (1 << (N/2)); i++) {
+
+			int temp_sum = 0;
+			int temp_cnt = 0;
+			vector<int>temp_used;
+			temp_used.clear();
+
+			for (int j = 0; j < (N/2); j++) {
+				if (i >> j & 1) { //use arr[j]
+					temp_cnt++;
+					temp_used.push_back(arr[j]);
+					temp_sum += arr[j];
+				}
+			}
+
+			if (Sol_setA.find(temp_sum) == Sol_setA.end() || Sol_setA[temp_sum].cnt > temp_cnt) {
+				Sol_setA[temp_sum].cnt = temp_cnt;
+				Sol_setA[temp_sum].number_used.clear();
+				for (int i = 0; i < temp_used.size(); i++) {
+					Sol_setA[temp_sum].number_used.push_back(temp_used[i]);
+				}
+			}
+		}
+
+		map<int, solution>::iterator ite;
+		/*
+		for (ite = Sol_setA.begin(); ite != Sol_setA.end(); ite++) {
+			cout << "Value: " << ite->first << endl;
+			cout << "Numbers: ";
+			for (int i = 0; i < ite->second.cnt; i++) {
+				cout << ite->second.number_used[i] << " ";
+			}
+			cout << endl;
+		}
+		*/
+
+		////	PART 3: enumerate all combinations of set B (later half) and match with Sol_setA////
+		Sol_setB[0].cnt = 0;
+		int b_0id = N / 2;
+		for (int i = 0; i < (1 << (N-b_0id)); i++) {
+
+			int temp_sum = 0;
+			int temp_cnt = 0;
+			vector<int>temp_used;
+			temp_used.clear();
+
+			for (int j = 0; j < (N - b_0id); j++) {
+				if (i >> j & 1) { //use arr[j]
+					temp_cnt++;
+					temp_used.push_back(arr[b_0id+j]);
+					temp_sum += arr[b_0id+j];
+				}
+			}
+
+			if (Sol_setB.find(temp_sum) == Sol_setB.end() || Sol_setB[temp_sum].cnt > temp_cnt) {
+				Sol_setB[temp_sum].cnt = temp_cnt;
+				Sol_setB[temp_sum].number_used.clear();
+				for (int i = 0; i < temp_used.size(); i++) {
+					Sol_setB[temp_sum].number_used.push_back(temp_used[i]);
+				}
+			}
+		}
+		/*
+		//map<int, solution>::iterator ite;
+		for (ite = Sol_setB.begin(); ite != Sol_setB.end(); ite++) {
+			cout << "Value: " << ite->first << endl;
+			cout << "Numbers: ";
+			for (int i = 0; i < ite->second.cnt; i++) {
+				cout << ite->second.number_used[i] << " ";
+			}
+			cout << endl;
+		}
+		*/
+
+		////	PART 4: Matching Sol_setA and Sol_setB	////
+		map<int, solution>::iterator bite;
+		for (ite = Sol_setA.begin(); ite != Sol_setA.end(); ite++) {
+			int A_value = ite->first;
+			int A_cnt = ite->second.cnt;
+			bite = Sol_setB.find(T - A_value);
+			if (bite!= Sol_setB.end()) {
+				int B_cnt = bite->second.cnt;
+				if (best_sol.size() == 0||best_sol.size()>A_cnt+B_cnt) {
+					best_sol.clear();
+					for (int i = 0; i < ite->second.number_used.size(); i++) {
+						best_sol.push_back(ite->second.number_used[i]);
+					}
+					for (int i = 0; i < bite->second.number_used.size(); i++) {
+						best_sol.push_back(bite->second.number_used[i]);
+					}
+				}
+			}
+		}
+
+		if (best_sol.size() == 0) {
+			cout << "impossible";
+		}
+		else {
+			for (int i = 0; i < best_sol.size(); i++) {
+				cout << best_sol[i] << " ";
+				//cout << num_to_idx[best_sol[i]] << " ";
+			}
+		}
+		cout << endl;
+	}
+
+}
