@@ -64,7 +64,7 @@ int main() {
 		bucket_element[sum] = temp_bucket;
 		key_arr.push_back(sum);
 		
-		//print_bucket_elements();
+		//print_bucket_element();
 
 		////	PART 4: from bucket_element to bucket_combination	////
 		map<int, vector<int>>::iterator ite; //ite points to bucket_element
